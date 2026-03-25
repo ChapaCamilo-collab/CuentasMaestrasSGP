@@ -1,0 +1,9 @@
+pandas
+sqlalchemy
+pyodbc
+scikit-learn
+openpyxl
+ipykernel
+notebook
+matplotlib
+seaborn

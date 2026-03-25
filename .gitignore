@@ -1,0 +1,33 @@
+# Entornos
+.env
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Archivos temporales
+*.log
+*.tmp
+*.bak
+tmp/
+
+# Salidas locales
+output/
+exports/
+resultados/
+context/Bibliografía/
+Constraste/
+
+# Herramientas de IA y Agentes (Archivos locales)
+AGENT.md
+.agent/
+docs/uso_ia_tfm.md
+docs/prompts_usados.md
