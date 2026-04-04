@@ -200,6 +200,83 @@ def ejecutar_deteccion_anomalias(
     return df, anomalias
 
 
+# =====================================================================
+#  GRÁFICOS POST-CONTRASTE (Evaluación de eficacia)
+# =====================================================================
+
+def generar_graficos_contraste(
+    verdaderos_positivos: int,
+    falsos_positivos: int,
+    falsos_negativos: int,
+    precision: float,
+    recall: float,
+    f1: float,
+    nombre_modelo: str,
+    output_dir: str
+):
+    """Genera gráficos de evaluación del contraste del modelo ML."""
+    logger.info("Generando gráficos de evaluación post-contraste...")
+    prefijo = nombre_modelo.lower().replace(" ", "_").replace("-", "").replace("+", "_").replace("(", "").replace(")", "")
+
+    # --- 1. Matriz de confusión simplificada ---
+    fig, ax = plt.subplots(figsize=(7, 5))
+    matriz = np.array([
+        [verdaderos_positivos, falsos_negativos],
+        [falsos_positivos, 0]
+    ])
+    labels = np.array([
+        [f"VP\n{verdaderos_positivos:,}", f"FN\n{falsos_negativos:,}"],
+        [f"FP\n{falsos_positivos:,}", "VN\n(N/A)"]
+    ])
+    sns.heatmap(
+        matriz, annot=labels, fmt="", cmap="RdYlGn_r",
+        xticklabels=["Predijo Riesgo", "Predijo Normal"],
+        yticklabels=["Real Riesgo", "Real Normal"],
+        linewidths=2, linecolor="white",
+        cbar_kws={"label": "Cantidad"},
+        ax=ax
+    )
+    ax.set_title(f"Matriz de Confusión — {nombre_modelo}", fontsize=13)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f"contraste_{prefijo}_01_matriz_confusion.png"))
+    plt.close()
+
+    # --- 2. Barras de métricas ---
+    fig, ax = plt.subplots(figsize=(8, 5))
+    metricas = ["Precisión\n(Precision)", "Sensibilidad\n(Recall)", "F1-Score"]
+    valores = [precision, recall, f1]
+    colores_met = ["#3498db", "#e67e22", "#2ecc71"]
+    bars = ax.bar(metricas, valores, color=colores_met, edgecolor="white", width=0.55)
+    for bar, v in zip(bars, valores):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01,
+                f"{v:.1%}", ha="center", va="bottom", fontweight="bold", fontsize=13)
+    ax.set_ylim(0, 1.15)
+    ax.set_ylabel("Valor")
+    ax.set_title(f"Métricas de Eficacia — {nombre_modelo}", fontsize=13)
+    ax.axhline(y=0.5, color="gray", linestyle="--", alpha=0.5, label="Umbral 50%")
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f"contraste_{prefijo}_02_metricas.png"))
+    plt.close()
+
+    # --- 3. Diagrama de composición (stacked bar) ---
+    fig, ax = plt.subplots(figsize=(8, 4))
+    categorias = ["Verdaderos Positivos", "Falsos Positivos", "Falsos Negativos"]
+    valores_comp = [verdaderos_positivos, falsos_positivos, falsos_negativos]
+    colores_comp = ["#27ae60", "#e74c3c", "#f39c12"]
+    bars = ax.barh(categorias, valores_comp, color=colores_comp, edgecolor="white", height=0.55)
+    for bar, v in zip(bars, valores_comp):
+        ax.text(bar.get_width() + max(valores_comp) * 0.01, bar.get_y() + bar.get_height() / 2,
+                f"{v:,}", ha="left", va="center", fontweight="bold", fontsize=11)
+    ax.set_title(f"Composición de Resultados — {nombre_modelo}", fontsize=13)
+    ax.set_xlabel("Número de Movimientos")
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f"contraste_{prefijo}_03_composicion.png"))
+    plt.close()
+
+    logger.info(f"📊 Gráficos de contraste exportados en: {output_dir}")
+
+
 def cargar_contraste() -> pd.DataFrame:
     """Carga datos de contraste."""
     if not os.path.exists(RUTA_CONTRASTE): return pd.DataFrame()
@@ -262,6 +339,16 @@ def evaluar_contraste(df_det: pd.DataFrame, df_real: pd.DataFrame, nombre: str):
         f.write(f"| **Sensibilidad (Recall)** | {rec:.2%} |\n")
         f.write(f"| **F1-Score** | {f1:.2%} |\n")
     logger.info(f"📄 Tabla Markdown para TFM exportada a: {md_path}")
+
+    # Generar gráficos de contraste (post-contraste)
+    try:
+        generar_graficos_contraste(
+            tp, fp, fn,
+            prec, rec, f1,
+            nombre, out_dir
+        )
+    except Exception as e:
+        logger.error(f"Error generando gráficos de contraste: {e}")
 
     logger.info(f"Eficacia {nombre}: Recall={rec:.2%}, Precision={prec:.2%}")
     return {"Precision": prec, "Recall": rec, "F1": f1}

@@ -3,6 +3,14 @@ Script de saneamiento - Backfill de cuentas faltantes en DIM_CUENTAS_CM desde re
 Este script identifica cuentas en archivos planos que no están en el maestro de Excel.
 """
 
+import sys
+from pathlib import Path
+
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+
 import logging
 import tkinter as tk
 from pathlib import Path

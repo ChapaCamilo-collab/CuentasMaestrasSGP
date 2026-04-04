@@ -3,6 +3,14 @@ ETL - Carga y actualización de FACT_MOVIMIENTOS_CMP (TFM SGP CMP).
 Versión refactorizada siguiendo los estándares de código del proyecto en español.
 """
 
+import sys
+from pathlib import Path
+
+_PROJECT_ROOT = str(Path(__file__).resolve().parents[2])
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+
 import logging
 import re
 import uuid
